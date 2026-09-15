@@ -1,39 +1,30 @@
 --[[
     ============================================================
-    Project Lazarus: ZOMBIES — UI Menu
+    Grondex Hub — UI Menu
     ============================================================
     Author: Noxis-spec
     GitHub: https://github.com/Noxis-spec/project-lazarus-script
 
     WHAT THIS FILE DOES:
-      Creates the WindUI menu with toggles for every feature.
+      Creates the WindUI menu with tabs for every feature.
       Each toggle flips a flag inside _G.LazarusFlags, which
       main.lua reads every frame to decide what to do.
 
-    FLAGS (set by toggles, read by main.lua):
-      _G.LazarusFlags.InstantKill
-      _G.LazarusFlags.InfAmmo
-      _G.LazarusFlags.NoRecoil
-      _G.LazarusFlags.FOVEnabled
-      _G.LazarusFlags.FOVValue
-      _G.LazarusFlags.ZombieESP
-      _G.LazarusFlags.BoxESP
-      _G.LazarusFlags.PaPESP
-      _G.LazarusFlags.Noclip
-      _G.LazarusFlags.Speed
-      _G.LazarusFlags.RainbowGun
+    TABS:
+      Main      — combat features
+      Visual    — FOV, Rainbow Gun
+      ESP       — zombie / box / pack-a-punch outlines
+      Misc      — speed, noclip, unload
+      Credits   — people who helped
+      About     — project info
 
     USAGE:
-      This file is loaded automatically by loader.lua.
-      Do not run it directly unless you also loaded main.lua.
+      Loaded automatically by loader.lua.
     ============================================================
 --]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- ============================================================
--- FLAGS — main.lua reads these to know what to enable
--- ============================================================
 _G.LazarusFlags = _G.LazarusFlags or {
     InstantKill = false,
     InfAmmo     = false,
@@ -50,30 +41,21 @@ _G.LazarusFlags = _G.LazarusFlags or {
 
 local Flags = _G.LazarusFlags
 
--- ============================================================
--- LOAD WINDUI LIBRARY
--- ============================================================
 local WindUI = loadstring(game:HttpGet(
     "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
 ))()
 
--- ============================================================
--- CREATE WINDOW
--- ============================================================
 local Window = WindUI:CreateWindow({
-    Title       = "Project Lazarus",
+    Title       = "Grondex Hub",
     Icon        = "skull",
-    Author      = "Noxis-spec",
-    Folder      = "LazarusScript",
+    Author      = "By Noxis",
+    Folder      = "GrondexHub",
     Size        = UDim2.fromOffset(500, 520),
     Transparent = true,
     Theme       = "Dark",
     Resizable   = true,
 })
 
--- ============================================================
--- MAIN TAB — combat features
--- ============================================================
 local MainTab = Window:Tab({ Title = "Main", Icon = "home" })
 
 MainTab:Toggle({
@@ -81,9 +63,7 @@ MainTab:Toggle({
     Desc     = "Zombies die from one bullet",
     Icon     = "sword",
     Value    = false,
-    Callback = function(state)
-        Flags.InstantKill = state
-    end,
+    Callback = function(state) Flags.InstantKill = state end,
 })
 
 MainTab:Toggle({
@@ -91,9 +71,7 @@ MainTab:Toggle({
     Desc     = "Magazine always full, no reload",
     Icon     = "package",
     Value    = false,
-    Callback = function(state)
-        Flags.InfAmmo = state
-    end,
+    Callback = function(state) Flags.InfAmmo = state end,
 })
 
 MainTab:Toggle({
@@ -101,14 +79,9 @@ MainTab:Toggle({
     Desc     = "Camera stays stable while shooting",
     Icon     = "crosshair",
     Value    = false,
-    Callback = function(state)
-        Flags.NoRecoil = state
-    end,
+    Callback = function(state) Flags.NoRecoil = state end,
 })
 
--- ============================================================
--- VISUAL TAB — camera and graphics
--- ============================================================
 local VisualTab = Window:Tab({ Title = "Visual", Icon = "eye" })
 
 VisualTab:Toggle({
@@ -116,9 +89,7 @@ VisualTab:Toggle({
     Desc     = "Change your field of view",
     Icon     = "maximize",
     Value    = false,
-    Callback = function(state)
-        Flags.FOVEnabled = state
-    end,
+    Callback = function(state) Flags.FOVEnabled = state end,
 })
 
 VisualTab:Slider({
@@ -126,9 +97,7 @@ VisualTab:Slider({
     Desc     = "Field of view (60 - 120)",
     Icon     = "move",
     Value    = { Min = 60, Max = 120, Default = 70 },
-    Callback = function(value)
-        Flags.FOVValue = value
-    end,
+    Callback = function(value) Flags.FOVValue = value end,
 })
 
 VisualTab:Divider()
@@ -138,14 +107,9 @@ VisualTab:Toggle({
     Desc     = "Weapon changes colors (visual only)",
     Icon     = "sparkles",
     Value    = false,
-    Callback = function(state)
-        Flags.RainbowGun = state
-    end,
+    Callback = function(state) Flags.RainbowGun = state end,
 })
 
--- ============================================================
--- ESP TAB — highlight features
--- ============================================================
 local EspTab = Window:Tab({ Title = "ESP", Icon = "scan" })
 
 EspTab:Toggle({
@@ -153,9 +117,7 @@ EspTab:Toggle({
     Desc     = "Red outline around zombies",
     Icon     = "skull",
     Value    = false,
-    Callback = function(state)
-        Flags.ZombieESP = state
-    end,
+    Callback = function(state) Flags.ZombieESP = state end,
 })
 
 EspTab:Toggle({
@@ -163,9 +125,7 @@ EspTab:Toggle({
     Desc     = "White outline around the Mystery Box",
     Icon     = "box",
     Value    = false,
-    Callback = function(state)
-        Flags.BoxESP = state
-    end,
+    Callback = function(state) Flags.BoxESP = state end,
 })
 
 EspTab:Toggle({
@@ -173,14 +133,9 @@ EspTab:Toggle({
     Desc     = "Blue outline around Pack-a-Punch",
     Icon     = "zap",
     Value    = false,
-    Callback = function(state)
-        Flags.PaPESP = state
-    end,
+    Callback = function(state) Flags.PaPESP = state end,
 })
 
--- ============================================================
--- MISC TAB — movement and other
--- ============================================================
 local MiscTab = Window:Tab({ Title = "Misc", Icon = "settings-2" })
 
 MiscTab:Toggle({
@@ -188,9 +143,7 @@ MiscTab:Toggle({
     Desc     = "Move faster than normal",
     Icon     = "wind",
     Value    = false,
-    Callback = function(state)
-        Flags.Speed = state
-    end,
+    Callback = function(state) Flags.Speed = state end,
 })
 
 MiscTab:Toggle({
@@ -198,9 +151,7 @@ MiscTab:Toggle({
     Desc     = "Walk through walls",
     Icon     = "ghost",
     Value    = false,
-    Callback = function(state)
-        Flags.Noclip = state
-    end,
+    Callback = function(state) Flags.Noclip = state end,
 })
 
 MiscTab:Divider()
@@ -224,21 +175,97 @@ MiscTab:Button({
     end,
 })
 
--- ============================================================
--- SETTINGS TAB — info
--- ============================================================
-local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
+local CreditsTab = Window:Tab({ Title = "Credits", Icon = "users" })
 
-SettingsTab:Paragraph({
-    Title = "About",
-    Desc  = "Project Lazarus All-in-One by Noxis-spec.\nGitHub: github.com/Noxis-spec/project-lazarus-script",
+CreditsTab:Paragraph({
+    Title = "Grondex Hub",
+    Desc  = "A Project Lazarus: ZOMBIES script built for mobile and PC.",
 })
 
-SettingsTab:Divider()
+CreditsTab:Divider()
 
-SettingsTab:Paragraph({
+CreditsTab:Paragraph({
+    Title = "Creator",
+    Desc  = "Noxis-spec\nGitHub: github.com/Noxis-spec",
+})
+
+CreditsTab:Divider()
+
+CreditsTab:Paragraph({
+    Title = "Script Logic",
+    Desc  = "Noxis-spec",
+})
+
+CreditsTab:Paragraph({
+    Title = "UI Design",
+    Desc  = "Noxis-spec\nPowered by WindUI (Footagesus)",
+})
+
+CreditsTab:Paragraph({
+    Title = "Testing",
+    Desc  = "Noxis-spec",
+})
+
+CreditsTab:Divider()
+
+CreditsTab:Paragraph({
+    Title = "Special Thanks",
+    Desc  = "WindUI by Footagesus\nRoblox Lua community",
+})
+
+local AboutTab = Window:Tab({ Title = "About", Icon = "info" })
+
+AboutTab:Paragraph({
+    Title = "About Grondex Hub",
+    Desc  = "All-in-one script for Project Lazarus: ZOMBIES. Built to make the game more fun and less grindy. Works on mobile and PC.",
+})
+
+AboutTab:Divider()
+
+AboutTab:Paragraph({
+    Title = "Version",
+    Desc  = "1.2.0",
+})
+
+AboutTab:Paragraph({
+    Title = "Author",
+    Desc  = "Noxis-spec",
+})
+
+AboutTab:Paragraph({
+    Title = "Repository",
+    Desc  = "github.com/Noxis-spec/project-lazarus-script",
+})
+
+AboutTab:Paragraph({
+    Title = "Tested On",
+    Desc  = "Arceus X Neo, Delta, Xeno",
+})
+
+AboutTab:Paragraph({
+    Title = "Requirements",
+    Desc  = "Executor with hookmetamethod, getrawmetatable, getreg support.",
+})
+
+AboutTab:Divider()
+
+AboutTab:Paragraph({
+    Title = "Features",
+    Desc  = "Instant Kill, Infinite Ammo, No Recoil, FOV Changer, Rainbow Gun, Zombie ESP, Mystery Box ESP, Pack-a-Punch ESP, Speed, Noclip",
+})
+
+AboutTab:Divider()
+
+AboutTab:Paragraph({
     Title = "Warning",
-    Desc  = "Use on alternate accounts only. Exploiting violates Roblox ToS.",
+    Desc  = "Using this script violates Roblox Terms of Service. Use on alternate accounts only. The author is not responsible for any bans.",
 })
 
-print("[Lazarus UI] loaded")
+AboutTab:Divider()
+
+AboutTab:Paragraph({
+    Title = "License",
+    Desc  = "Free to use, modify and redistribute. Attribution appreciated but not required.",
+})
+
+print("[Grondex Hub] loaded")
