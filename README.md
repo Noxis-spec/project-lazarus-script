@@ -21,8 +21,34 @@
 - **Noclip** — walk through walls
 
 ## Usage
-
 Copy the code below and paste it into your executor:
 
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Noxis-spec/project-lazarus-script/main/loader.lua"))()
+```
+
+The loader will show a loading screen, then open the menu.
+
+## Compatibility
+
+Tested on:
+- Arceus X Neo
+- Delta
+- Xeno
+
+Requires executor with `hookmetamethod`, `getrawmetatable` and `getreg` support.
+
+## Credits
+
+- **Creator:** Noxis-spec
+- **Script Logic:** Noxis-spec
+- **UI Design:** Noxis-spec + WindUI by Footagesus
+- **Testing:** Noxis-spec
+
+## Warning
+
+Using this script violates Roblox Terms of Service and may result in a **permanent ban**. Use only on alternate accounts. The author is not responsible for any consequences.
+
+## License
+
+Free to use, modify and redistribute. Attribution appreciated but not required.
