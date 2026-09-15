@@ -4,6 +4,7 @@
     ============================================================
     Author: Noxis-spec
     GitHub: https://github.com/Noxis-spec/project-lazarus-script
+    Version: 1.3.0
 
     WHAT THIS FILE DOES:
       Creates the WindUI menu with tabs for every feature.
@@ -224,7 +225,7 @@ AboutTab:Divider()
 
 AboutTab:Paragraph({
     Title = "Version",
-    Desc  = "1.2.0",
+    Desc  = "1.3.0",
 })
 
 AboutTab:Paragraph({
@@ -268,4 +269,4 @@ AboutTab:Paragraph({
     Desc  = "Free to use, modify and redistribute. Attribution appreciated but not required.",
 })
 
-print("[Grondex Hub] loaded")
+print("[Grondex Hub] UI loaded — v1.3.0")
