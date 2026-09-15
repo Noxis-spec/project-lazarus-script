@@ -1,9 +1,10 @@
 --[[
     ============================================================
-    Project Lazarus: ZOMBIES — Main Logic
+    Grondex Hub — Main Logic
     ============================================================
     Author: Noxis-spec
     GitHub: https://github.com/Noxis-spec/project-lazarus-script
+    Version: 1.2.0
 
     WHAT THIS FILE DOES:
       Reads flags from _G.LazarusFlags (set by ui.lua) and
@@ -24,9 +25,6 @@ local Workspace  = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local player     = Players.LocalPlayer
 
--- ============================================================
--- SETTINGS
--- ============================================================
 local ONE_SHOT_DMG = 999999
 local MAX_AMMO     = 999
 
@@ -37,9 +35,6 @@ local PAP_ESP_COLOR    = Color3.fromRGB(100, 150, 255)
 local ESP_REFRESH  = 1
 local AMMO_REFRESH = 0.2
 
--- ============================================================
--- FLAGS (fallback if ui.lua not loaded yet)
--- ============================================================
 _G.LazarusFlags = _G.LazarusFlags or {
     InstantKill = false,
     InfAmmo     = false,
@@ -56,11 +51,7 @@ _G.LazarusFlags = _G.LazarusFlags or {
 local Flags = _G.LazarusFlags
 
 local hookedAmmo = {}
-local rainbowParts = {}
 
--- ============================================================
--- INSTANT KILL — only changes damage if flag is true
--- ============================================================
 local mt = getrawmetatable and getrawmetatable(game)
 if mt then
     local oldNamecall = mt.__namecall
@@ -79,9 +70,6 @@ if mt then
     setreadonly(mt, true)
 end
 
--- ============================================================
--- INFINITE AMMO — only holds ammo when flag is true
--- ============================================================
 local function hookAmmoValue(v)
     if not v or hookedAmmo[v] then return end
     if not (v:IsA("IntValue") or v:IsA("NumberValue")) then return end
@@ -210,9 +198,6 @@ task.spawn(function()
     end
 end)
 
--- ============================================================
--- FOV — only applies if flag is true
--- ============================================================
 local originalFOV = Workspace.CurrentCamera.FieldOfView
 
 RunService.RenderStepped:Connect(function()
@@ -220,12 +205,11 @@ RunService.RenderStepped:Connect(function()
     if not cam then return end
     if Flags.FOVEnabled then
         pcall(function() cam.FieldOfView = Flags.FOVValue end)
+    else
+        pcall(function() cam.FieldOfView = originalFOV end)
     end
 end)
 
--- ============================================================
--- SPEED + NOCLIP — only applies if flag is true
--- ============================================================
 RunService.RenderStepped:Connect(function()
     local char = player.Character
     if not char then return end
@@ -246,9 +230,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ============================================================
--- ZOMBIE ESP — only visible when flag is true
--- ============================================================
 local zombieCache = {}
 
 local function applyZombieESP(model)
@@ -283,7 +264,6 @@ task.spawn(function()
                     pcall(function() hl:Destroy() end)
                     zombieCache[model] = nil
                 end
-                hl.Enabled = true
             end
         else
             for model, hl in pairs(zombieCache) do
@@ -294,9 +274,6 @@ task.spawn(function()
     end
 end)
 
--- ============================================================
--- MYSTERY BOX ESP — only visible when flag is true
--- ============================================================
 local boxHighlight = nil
 
 local function findActiveBox()
@@ -334,9 +311,6 @@ task.spawn(function()
     end
 end)
 
--- ============================================================
--- PACK-A-PUNCH ESP — only visible when flag is true
--- ============================================================
 local papHighlight = nil
 
 local function findActivePaP()
@@ -377,9 +351,6 @@ task.spawn(function()
     end
 end)
 
--- ============================================================
--- RAINBOW GUN — only applies if flag is true
--- ============================================================
 task.spawn(function()
     while task.wait(0.1) do
         if Flags.RainbowGun then
@@ -402,9 +373,6 @@ task.spawn(function()
     end
 end)
 
--- ============================================================
--- NO RECOIL — only active when flag is true
--- ============================================================
 if hookmetamethod and checkcaller then
     local old
     old = hookmetamethod(game, "__newindex", newcclosure(function(self, key, value)
@@ -419,4 +387,4 @@ if hookmetamethod and checkcaller then
     end))
 end
 
-print("[Lazarus Main] loaded — waiting for flags")
+print("[Grondex Hub] main loaded")
