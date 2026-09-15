@@ -1,3 +1,4 @@
+
 --[[
     ============================================================
     Project Lazarus: ZOMBIES — Loader
@@ -6,16 +7,10 @@
     GitHub: https://github.com/Noxis-spec/project-lazarus-script
 
     WHAT THIS FILE DOES:
-      1. Shows a loading screen to the player
+      1. Shows an animated loading screen
       2. Fetches main.lua (the actual cheat logic)
       3. Fetches ui.lua (the WindUI menu)
       4. Runs both files in order
-
-    WHY A LOADER:
-      - User only needs to run ONE link
-      - If main.lua or ui.lua is updated, users get the new version
-        automatically without changing their loadstring
-      - Loading screen gives visual feedback while files download
 
     USAGE:
       loadstring(game:HttpGet("https://raw.githubusercontent.com/Noxis-spec/project-lazarus-script/main/loader.lua"))()
@@ -26,84 +21,176 @@
     ============================================================
 --]]
 
--- Wait for the game to fully load before doing anything
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local player  = Players.LocalPlayer
 
--- ============================================================
--- BASE URL — all files are fetched from this folder
--- If you fork this repo, change BASE to your own GitHub link
--- ============================================================
 local BASE = "https://raw.githubusercontent.com/Noxis-spec/project-lazarus-script/main/"
 
 -- ============================================================
 -- LOADING SCREEN
--- Simple black screen with a progress bar.
--- Gets destroyed after both files are loaded.
 -- ============================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "LazarusLoader"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Full-screen black background
+-- Background
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1, 0, 1, 0)
-bg.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
-bg.BackgroundTransparency = 0
+bg.BackgroundColor3 = Color3.fromRGB(8, 6, 10)
+bg.BackgroundTransparency = 1
 bg.BorderSizePixel = 0
 bg.Parent = gui
 
--- Main title text
+-- Gradient overlay
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 0, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(8, 6, 10)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 0, 0)),
+})
+gradient.Rotation = 45
+gradient.Parent = bg
+
+-- Center container
+local container = Instance.new("Frame")
+container.Size = UDim2.new(0, 400, 0, 220)
+container.Position = UDim2.new(0.5, -200, 0.5, -110)
+container.BackgroundTransparency = 1
+container.Parent = bg
+
+-- Logo circle
+local logoBg = Instance.new("Frame")
+logoBg.Size = UDim2.new(0, 80, 0, 80)
+logoBg.Position = UDim2.new(0.5, -40, 0, 0)
+logoBg.BackgroundColor3 = Color3.fromRGB(180, 20, 20)
+logoBg.BorderSizePixel = 0
+logoBg.Parent = container
+
+local logoCorner = Instance.new("UICorner")
+logoCorner.CornerRadius = UDim.new(1, 0)
+logoCorner.Parent = logoBg
+
+local logoGradient = Instance.new("UIGradient")
+logoGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 60)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 0)),
+})
+logoGradient.Rotation = 90
+logoGradient.Parent = logoBg
+
+local logoText = Instance.new("TextLabel")
+logoText.Size = UDim2.new(1, 0, 1, 0)
+logoText.BackgroundTransparency = 1
+logoText.Text = "PL"
+logoText.TextColor3 = Color3.fromRGB(255, 255, 255)
+logoText.TextSize = 34
+logoText.Font = Enum.Font.GothamBlack
+logoText.Parent = logoBg
+
+-- Title
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
-title.Position = UDim2.new(0, 0, 0.4, 0)
+title.Size = UDim2.new(1, 0, 0, 36)
+title.Position = UDim2.new(0, 0, 0, 100)
 title.BackgroundTransparency = 1
 title.Text = "PROJECT LAZARUS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 28
-title.Font = Enum.Font.GothamBold
-title.Parent = bg
+title.TextSize = 26
+title.Font = Enum.Font.GothamBlack
+title.Parent = container
 
--- Status text (changes while loading)
+-- Subtitle
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, 0, 0, 18)
+subtitle.Position = UDim2.new(0, 0, 0, 136)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "by Noxis-spec"
+subtitle.TextColor3 = Color3.fromRGB(180, 100, 100)
+subtitle.TextSize = 14
+subtitle.Font = Enum.Font.Gotham
+subtitle.Parent = container
+
+-- Status text
 local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, 0, 0, 20)
-status.Position = UDim2.new(0, 0, 0.4, 45)
+status.Size = UDim2.new(1, 0, 0, 18)
+status.Position = UDim2.new(0, 0, 0, 162)
 status.BackgroundTransparency = 1
-status.Text = "Loading..."
+status.Text = "Initializing..."
 status.TextColor3 = Color3.fromRGB(180, 180, 180)
-status.TextSize = 16
+status.TextSize = 13
 status.Font = Enum.Font.Gotham
-status.Parent = bg
+status.Parent = container
 
 -- Progress bar background
 local barBg = Instance.new("Frame")
-barBg.Size = UDim2.new(0, 300, 0, 6)
-barBg.Position = UDim2.new(0.5, -150, 0.4, 80)
-barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+barBg.Size = UDim2.new(0, 320, 0, 6)
+barBg.Position = UDim2.new(0.5, -160, 0, 190)
+barBg.BackgroundColor3 = Color3.fromRGB(30, 25, 30)
 barBg.BorderSizePixel = 0
-barBg.Parent = bg
+barBg.Parent = container
 
--- Progress bar fill (grows from 0 to 1)
+local barCorner = Instance.new("UICorner")
+barCorner.CornerRadius = UDim.new(1, 0)
+barCorner.Parent = barBg
+
+-- Progress bar fill
 local barFill = Instance.new("Frame")
 barFill.Size = UDim2.new(0, 0, 1, 0)
 barFill.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
 barFill.BorderSizePixel = 0
 barFill.Parent = barBg
 
--- Helper: update progress bar
--- t = number from 0 to 1 (0% to 100%)
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(1, 0)
+fillCorner.Parent = barFill
+
+local fillGradient = Instance.new("UIGradient")
+fillGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 100)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0)),
+})
+fillGradient.Parent = barFill
+
+-- ============================================================
+-- ANIMATIONS
+-- ============================================================
+-- Fade in background
+TweenService:Create(bg, TweenInfo.new(0.4), {
+    BackgroundTransparency = 0
+}):Play()
+
+-- Pulse animation on the logo
+task.spawn(function()
+    while gui.Parent do
+        local t1 = TweenService:Create(logoBg, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            Size = UDim2.new(0, 88, 0, 88),
+            Position = UDim2.new(0.5, -44, 0, -4),
+        })
+        t1:Play()
+        t1.Completed:Wait()
+        local t2 = TweenService:Create(logoBg, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {
+            Size = UDim2.new(0, 80, 0, 80),
+            Position = UDim2.new(0.5, -40, 0, 0),
+        })
+        t2:Play()
+        t2.Completed:Wait()
+    end
+end)
+
+-- Smooth progress update
 local function setProgress(t)
-    barFill.Size = UDim2.new(t, 0, 1, 0)
+    TweenService:Create(barFill, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(t, 0, 1, 0)
+    }):Play()
 end
 
 -- ============================================================
 -- FILE FETCHER
--- Downloads a file from BASE URL.
--- Returns the file content as a string, or nil on failure.
 -- ============================================================
 local function fetch(name)
     local url = BASE .. name
@@ -119,31 +206,33 @@ end
 
 -- ============================================================
 -- LOAD SEQUENCE
--- 1. Fetch main.lua
--- 2. Fetch ui.lua
--- 3. Destroy loading screen
--- 4. Run main.lua
--- 5. Run ui.lua
 -- ============================================================
+task.wait(0.4)
 
 status.Text = "Fetching main.lua..."
 setProgress(0.33)
-task.wait(0.3)
 local mainCode = fetch("main.lua")
 
+task.wait(0.3)
 status.Text = "Fetching ui.lua..."
 setProgress(0.66)
-task.wait(0.3)
 local uiCode = fetch("ui.lua")
 
+task.wait(0.3)
 status.Text = "Launching..."
 setProgress(1)
-task.wait(0.5)
+task.wait(0.6)
 
--- Remove loading screen before showing the menu
+-- Fade out
+local fadeOut = TweenService:Create(bg, TweenInfo.new(0.4), {
+    BackgroundTransparency = 1
+})
+fadeOut:Play()
+fadeOut.Completed:Wait()
+
 gui:Destroy()
 
--- Run main.lua first (loads cheat logic and globals)
+-- Run main first, then ui
 if mainCode then
     local ok, err = pcall(function()
         loadstring(mainCode)()
@@ -151,7 +240,6 @@ if mainCode then
     if not ok then warn("[Lazarus Loader] main.lua error:", err) end
 end
 
--- Then run ui.lua (creates WindUI menu that controls main.lua)
 if uiCode then
     local ok, err = pcall(function()
         loadstring(uiCode)()
