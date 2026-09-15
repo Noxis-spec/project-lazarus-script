@@ -1,58 +1,21 @@
 --[[
     ============================================================
-    Project Lazarus: ZOMBIES — All-in-One Script
+    Project Lazarus: ZOMBIES — Main Logic
     ============================================================
     Author: Noxis-spec
     GitHub: https://github.com/Noxis-spec/project-lazarus-script
 
-    FUNCTIONS:
-      - Instant Kill       — zombies die from a single bullet
-      - Infinite Ammo      — magazine is always full
-      - No Reload          — reload animation never triggers
-      - No Recoil          — camera stays stable while shooting
-      - Zombie ESP         — red outline around zombies (through walls)
-      - Mystery Box ESP    — white outline around the Mystery Box
-      - Pack-a-Punch ESP   — blue outline around the Pack-a-Punch
+    WHAT THIS FILE DOES:
+      Reads flags from _G.LazarusFlags (set by ui.lua) and
+      enables/disables cheat features accordingly.
 
-    USAGE:
-      loadstring(game:HttpGet("https://raw.githubusercontent.com/Noxis-spec/project-lazarus-script/main/main.lua"))()
+    FLAGS READ FROM _G.LazarusFlags:
+      InstantKill, InfAmmo, NoRecoil, FOVEnabled, FOVValue,
+      ZombieESP, BoxESP, PaPESP, Noclip, Speed, RainbowGun
 
-    TESTED ON:
-      Arceus X Neo, Delta, Xeno
-      Requires: hookmetamethod, getrawmetatable, getreg
-
-    WARNING:
-      Using this script violates Roblox Terms of Service.
-      Use only on alternate accounts. Author is not responsible
-      for any bans or consequences.
-
-    ============================================================
-    SETTINGS — change these values if you want
+    This file is loaded by loader.lua. Do not run it directly.
     ============================================================
 --]]
-
--- Damage dealt to zombies when Instant Kill is active.
--- Increase if zombies somehow survive (very rare).
-local ONE_SHOT_DMG = 999999
-
--- Maximum ammo value written into the magazine.
--- Lower it (e.g. 100) if the game starts rejecting the value.
-local MAX_AMMO = 999
-
--- ESP colors (RGB). Change if you want different outlines.
-local ZOMBIE_ESP_COLOR = Color3.fromRGB(255, 0, 0)     -- red
-local BOX_ESP_COLOR    = Color3.fromRGB(255, 255, 255) -- white
-local PAP_ESP_COLOR    = Color3.fromRGB(100, 150, 255) -- blue
-
--- ESP refresh interval (seconds). Lower = more responsive, higher = less lag.
-local ESP_REFRESH = 1
-
--- Ammo check interval (seconds). Lower = safer against reload, higher = less CPU.
-local AMMO_REFRESH = 0.2
-
--- ============================================================
--- DO NOT EDIT BELOW UNLESS YOU KNOW WHAT YOU ARE DOING
--- ============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
@@ -61,12 +24,42 @@ local Workspace  = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local player     = Players.LocalPlayer
 
-local hookedAmmo = {}
+-- ============================================================
+-- SETTINGS
+-- ============================================================
+local ONE_SHOT_DMG = 999999
+local MAX_AMMO     = 999
+
+local ZOMBIE_ESP_COLOR = Color3.fromRGB(255, 0, 0)
+local BOX_ESP_COLOR    = Color3.fromRGB(255, 255, 255)
+local PAP_ESP_COLOR    = Color3.fromRGB(100, 150, 255)
+
+local ESP_REFRESH  = 1
+local AMMO_REFRESH = 0.2
 
 -- ============================================================
--- INSTANT KILL
--- Hooks the "Damage" remote and rewrites the damage value
--- before it is sent to the server.
+-- FLAGS (fallback if ui.lua not loaded yet)
+-- ============================================================
+_G.LazarusFlags = _G.LazarusFlags or {
+    InstantKill = false,
+    InfAmmo     = false,
+    NoRecoil    = false,
+    FOVEnabled  = false,
+    FOVValue    = 70,
+    ZombieESP   = false,
+    BoxESP      = false,
+    PaPESP      = false,
+    Noclip      = false,
+    Speed       = false,
+    RainbowGun  = false,
+}
+local Flags = _G.LazarusFlags
+
+local hookedAmmo = {}
+local rainbowParts = {}
+
+-- ============================================================
+-- INSTANT KILL — only changes damage if flag is true
 -- ============================================================
 local mt = getrawmetatable and getrawmetatable(game)
 if mt then
@@ -74,7 +67,7 @@ if mt then
     setreadonly(mt, false)
     mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
-        if method == "FireServer" and self.Name == "Damage" then
+        if method == "FireServer" and self.Name == "Damage" and Flags.InstantKill then
             local args = {...}
             if type(args[1]) == "table" and args[1]["Damage"] ~= nil then
                 args[1]["Damage"] = ONE_SHOT_DMG
@@ -87,12 +80,7 @@ if mt then
 end
 
 -- ============================================================
--- INFINITE AMMO + NO RELOAD
--- Three methods work together:
---   1. Hooks NumberValue/IntValue with "ammo"/"mag"/"clip" names
---      and keeps them at MAX_AMMO.
---   2. Scans the Lua registry for ammo tables.
---   3. Scans Workspace as a fallback.
+-- INFINITE AMMO — only holds ammo when flag is true
 -- ============================================================
 local function hookAmmoValue(v)
     if not v or hookedAmmo[v] then return end
@@ -101,15 +89,15 @@ local function hookAmmoValue(v)
     if n:find("ammo") or n:find("mag") or n:find("clip") then
         v.Value = MAX_AMMO
         hookedAmmo[v] = v.Changed:Connect(function()
-            if v.Parent and v.Value < MAX_AMMO then
+            if Flags.InfAmmo and v.Parent and v.Value < MAX_AMMO then
                 v.Value = MAX_AMMO
             end
         end)
     end
 end
 
--- Resets any "reload" flags found inside the weapon.
 local function killReloadVars(tool)
+    if not Flags.InfAmmo then return end
     if not tool or not tool:IsA("Tool") then return end
     pcall(function()
         for _, v in ipairs(tool:GetDescendants()) do
@@ -130,7 +118,7 @@ local function killReloadVars(tool)
 end
 
 local function scanChar(char)
-    if not char then return end
+    if not char or not Flags.InfAmmo then return end
     for _, d in ipairs(char:GetDescendants()) do
         hookAmmoValue(d)
     end
@@ -140,7 +128,7 @@ end
 
 local hasGetreg = getreg ~= nil
 local function scanReg()
-    if not hasGetreg then return end
+    if not hasGetreg or not Flags.InfAmmo then return end
     pcall(function()
         for _, v in next, getreg() do
             if type(v) == "table" then
@@ -156,6 +144,7 @@ local function scanReg()
 end
 
 local function scanWorkspace()
+    if not Flags.InfAmmo then return end
     pcall(function()
         for _, v in ipairs(Workspace:GetDescendants()) do
             if (v:IsA("IntValue") or v:IsA("NumberValue")) then
@@ -168,7 +157,6 @@ local function scanWorkspace()
     end)
 end
 
--- Re-scan on respawn
 player.CharacterAdded:Connect(function(char)
     for v, conn in pairs(hookedAmmo) do
         pcall(function() conn:Disconnect() end)
@@ -194,9 +182,9 @@ if player.Character then
     end)
 end
 
--- Fast loop for the currently held weapon
 task.spawn(function()
     while task.wait(AMMO_REFRESH) do
+        if not Flags.InfAmmo then continue end
         local char = player.Character
         if char then
             local tool = char:FindFirstChildOfClass("Tool")
@@ -210,12 +198,10 @@ task.spawn(function()
     end
 end)
 
--- Registry scan
 task.spawn(function()
     while task.wait(0.5) do scanReg() end
 end)
 
--- Slow fallback scan
 task.spawn(function()
     while task.wait(1) do
         local char = player.Character
@@ -225,9 +211,43 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ZOMBIE ESP
--- Red outline around every model inside Workspace.Baddies.
--- Skips player characters.
+-- FOV — only applies if flag is true
+-- ============================================================
+local originalFOV = Workspace.CurrentCamera.FieldOfView
+
+RunService.RenderStepped:Connect(function()
+    local cam = Workspace.CurrentCamera
+    if not cam then return end
+    if Flags.FOVEnabled then
+        pcall(function() cam.FieldOfView = Flags.FOVValue end)
+    end
+end)
+
+-- ============================================================
+-- SPEED + NOCLIP — only applies if flag is true
+-- ============================================================
+RunService.RenderStepped:Connect(function()
+    local char = player.Character
+    if not char then return end
+
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if Flags.Speed and hum.WalkSpeed ~= 60 then
+            hum.WalkSpeed = 60
+        elseif not Flags.Speed and hum.WalkSpeed ~= 16 then
+            hum.WalkSpeed = 16
+        end
+    end
+
+    if Flags.Noclip then
+        for _, p in ipairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
+        end
+    end
+end)
+
+-- ============================================================
+-- ZOMBIE ESP — only visible when flag is true
 -- ============================================================
 local zombieCache = {}
 
@@ -236,7 +256,6 @@ local function applyZombieESP(model)
     if not model:IsA("Model") then return end
     if Players:GetPlayerFromCharacter(model) then return end
     if not model:FindFirstChildOfClass("Humanoid") then return end
-
     local hl = Instance.new("Highlight")
     hl.FillColor = ZOMBIE_ESP_COLOR
     hl.OutlineColor = ZOMBIE_ESP_COLOR
@@ -250,16 +269,24 @@ end
 
 task.spawn(function()
     while task.wait(ESP_REFRESH) do
-        pcall(function()
-            local baddies = Workspace:FindFirstChild("Baddies")
-            if baddies then
-                for _, m in ipairs(baddies:GetChildren()) do
-                    if m:IsA("Model") then applyZombieESP(m) end
+        if Flags.ZombieESP then
+            pcall(function()
+                local baddies = Workspace:FindFirstChild("Baddies")
+                if baddies then
+                    for _, m in ipairs(baddies:GetChildren()) do
+                        if m:IsA("Model") then applyZombieESP(m) end
+                    end
                 end
+            end)
+            for model, hl in pairs(zombieCache) do
+                if not model.Parent or not hl.Parent then
+                    pcall(function() hl:Destroy() end)
+                    zombieCache[model] = nil
+                end
+                hl.Enabled = true
             end
-        end)
-        for model, hl in pairs(zombieCache) do
-            if not model.Parent or not hl.Parent then
+        else
+            for model, hl in pairs(zombieCache) do
                 pcall(function() hl:Destroy() end)
                 zombieCache[model] = nil
             end
@@ -268,8 +295,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- MYSTERY BOX ESP
--- White outline around the Mystery Box model.
+-- MYSTERY BOX ESP — only visible when flag is true
 -- ============================================================
 local boxHighlight = nil
 
@@ -284,6 +310,10 @@ end
 
 task.spawn(function()
     while task.wait(0.5) do
+        if not Flags.BoxESP then
+            if boxHighlight then boxHighlight:Destroy(); boxHighlight = nil end
+            continue
+        end
         local box = findActiveBox()
         if box then
             if not boxHighlight or boxHighlight.Adornee ~= box then
@@ -299,16 +329,13 @@ task.spawn(function()
             end
             boxHighlight.Enabled = true
         else
-            if boxHighlight then
-                boxHighlight.Enabled = false
-            end
+            if boxHighlight then boxHighlight.Enabled = false end
         end
     end
 end)
 
 -- ============================================================
--- PACK-A-PUNCH ESP
--- Blue outline around the Pack-a-Punch machine.
+-- PACK-A-PUNCH ESP — only visible when flag is true
 -- ============================================================
 local papHighlight = nil
 
@@ -326,6 +353,10 @@ end
 
 task.spawn(function()
     while task.wait(ESP_REFRESH) do
+        if not Flags.PaPESP then
+            if papHighlight then papHighlight:Destroy(); papHighlight = nil end
+            continue
+        end
         local pap = findActivePaP()
         if pap then
             if not papHighlight or papHighlight.Adornee ~= pap then
@@ -341,22 +372,43 @@ task.spawn(function()
             end
             papHighlight.Enabled = true
         else
-            if papHighlight then
-                papHighlight.Enabled = false
+            if papHighlight then papHighlight.Enabled = false end
+        end
+    end
+end)
+
+-- ============================================================
+-- RAINBOW GUN — only applies if flag is true
+-- ============================================================
+task.spawn(function()
+    while task.wait(0.1) do
+        if Flags.RainbowGun then
+            local char = player.Character
+            if char then
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    local hue = tick() % 5 / 5
+                    local color = Color3.fromHSV(hue, 1, 1)
+                    pcall(function()
+                        for _, d in ipairs(tool:GetDescendants()) do
+                            if d:IsA("BasePart") then
+                                d.Color = color
+                            end
+                        end
+                    end)
+                end
             end
         end
     end
 end)
 
 -- ============================================================
--- NO RECOIL
--- Blocks camera CFrame updates that are smaller than 0.01 studs
--- (that is the recoil kick). Player mouse movement is untouched.
+-- NO RECOIL — only active when flag is true
 -- ============================================================
 if hookmetamethod and checkcaller then
     local old
     old = hookmetamethod(game, "__newindex", newcclosure(function(self, key, value)
-        if not checkcaller() and key == "CFrame" and self == workspace.CurrentCamera then
+        if not checkcaller() and key == "CFrame" and self == workspace.CurrentCamera and Flags.NoRecoil then
             local cur = workspace.CurrentCamera.CFrame
             local diff = (value.Position - cur.Position).Magnitude
             if diff < 0.01 then
@@ -367,4 +419,4 @@ if hookmetamethod and checkcaller then
     end))
 end
 
-print("[Lazarus All-in-One] loaded")
+print("[Lazarus Main] loaded — waiting for flags")
