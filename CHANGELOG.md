@@ -1,9 +1,36 @@
-# Changelog
+## [1.2.0] — 2026-09-15
 
-All notable changes to this project will be documented in this file.
+### Added
+- **loader.lua** — animated loading screen with fade in/out
+- **ui.lua** — WindUI menu with 5 tabs:
+  - Main (Instant Kill, Infinite Ammo, No Recoil)
+  - Visual (FOV Changer + slider, Rainbow Gun)
+  - ESP (Zombie ESP, Mystery Box ESP, Pack-a-Punch ESP)
+  - Misc (Speed, Noclip, Unload button)
+  - Settings (About, Warning)
+- Flag system (`_G.LazarusFlags`) — toggles in the menu control the features in real time
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Changed
+- **main.lua** — rewritten to read flags instead of always-on
+- Loader now shows animated progress with pulsing logo
+- ESP colors moved to settings block at the top of main.lua
+
+### Fixed
+- Zombie ESP no longer applies to player characters
+- Reload variables are now properly reset when Inf Ammo is enabled
+
+---
+
+## [1.1.0] — 2026-09-14
+
+### Added
+- Loader system — user only needs to run one link
+- Separate `ui.lua` file for the menu
+
+### Changed
+- Split project into multiple files (`loader.lua`, `main.lua`, `ui.lua`)
+
+---
 
 ## [1.0.0] — 2026-09-14
 
@@ -21,25 +48,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tested on Arceus X Neo, Delta, Xeno
 - Requires executor with `hookmetamethod`, `getrawmetatable`, `getreg` support
 - Use on alternate accounts only
-
----
-
-## How to read this file
-
-- **Added** — new features
-- **Changed** — changes in existing functionality
-- **Fixed** — bug fixes
-- **Removed** — removed features
-- **Deprecated** — features that will be removed soon
-
----
-
-## Version format
-
-Versions follow `MAJOR.MINOR.PATCH`:
-
-- **MAJOR** — big changes, may break compatibility
-- **MINOR** — new features, backwards compatible
-- **PATCH** — small bug fixes
-
-Example: `1.2.3`
